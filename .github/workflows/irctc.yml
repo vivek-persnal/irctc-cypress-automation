@@ -23,32 +23,36 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-    - uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-    - uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-        cache: 'pip'
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
 
-    - name: Run IRCTC script
-      env:
-        TZ: Asia/Kolkata
-      run: |
-        python -m pip install -r irctc-captcha-solver/requirements.txt
+      - name: Install dependencies
+        run: python -m pip install -r irctc-captcha-solver/requirements.txt
 
-        python3 irctc-captcha-solver/app.py ""  
+      - name: Run app (load models)
+        env:
+          TZ: Asia/Kolkata
+        run: python3 irctc-captcha-solver/app.py ""
 
-        PASSWORD=$(jq -r '.inputs.PASSWORD' "$GITHUB_EVENT_PATH")
-        USERNAME=$(jq -r '.inputs.USERNAME' "$GITHUB_EVENT_PATH")
-        UPI_ID=$(jq -r '.inputs.UPI_ID' "$GITHUB_EVENT_PATH")
+      - name: Set secrets as env
+        env:
+          PASSWORD: ${{ secrets.PASSWORD }}
+          USERNAME: ${{ secrets.USERNAME }}
+          UPI_ID: ${{ secrets.UPI_ID }}
+        run: |
+          echo "::add-mask::$PASSWORD"
+          echo "::add-mask::$USERNAME"
+          echo "::add-mask::$UPI_ID"
 
-        echo "::add-mask::$PASSWORD"
-        echo "::add-mask::$USERNAME"
-        echo "::add-mask::$UPI_ID"
-
-        echo "PASSWORD=$PASSWORD" >> $GITHUB_ENV
-        echo "USERNAME=$USERNAME" >> $GITHUB_ENV
-        echo "UPI_ID=$UPI_ID" >> $GITHUB_ENV
+          echo "PASSWORD=$PASSWORD" >> $GITHUB_ENV
+          echo "USERNAME=$USERNAME" >> $GITHUB_ENV
+          echo "UPI_ID=$UPI_ID" >> $GITHUB_ENV
 
 
     # python3 irctc-captcha-solver/app.py "" is used for models to load before starting tatkal tickets 
